@@ -1,0 +1,23 @@
+# Credentials - never commit these
+*.json
+!app/package.json
+!app/tsconfig.json
+
+# Env files
+.env
+.env.local
+.env*.local
+
+# Next.js
+app/.next/
+app/out/
+app/node_modules/
+
+# Test scripts
+test-auth.ps1
+
+# Screenshots
+*.png
+
+# PDF docs
+*.pdf
