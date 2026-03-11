@@ -51,10 +51,10 @@ export function getSheets() {
  * Reads all rows from a sheet tab by its name.
  * Returns raw 2D array of string values.
  */
-export async function getSheetData(sheetName: string, range = 'A:ZZ'): Promise<string[][]> {
+export async function getSheetData(sheetName: string, range = 'A:ZZ', spreadsheetId = SPREADSHEET_ID): Promise<string[][]> {
   const sheets = getSheets();
   const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId,
     range: `${sheetName}!${range}`,
   });
   return (response.data.values ?? []) as string[][];
@@ -72,10 +72,10 @@ export async function getSheetDataByGid(gid: number, range = 'A:ZZ'): Promise<st
 /**
  * Writes values to a sheet tab.
  */
-export async function writeSheetData(sheetName: string, range: string, values: string[][]): Promise<void> {
+export async function writeSheetData(sheetName: string, range: string, values: string[][], spreadsheetId = SPREADSHEET_ID): Promise<void> {
   const sheets = getSheets();
   await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
+    spreadsheetId,
     range: `${sheetName}!${range}`,
     valueInputOption: 'RAW',
     requestBody: { values },

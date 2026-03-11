@@ -14,6 +14,12 @@ type Tab = 'keywords' | 'results';
 const POLL_INTERVAL_MS = 10_000;
 const TIMEOUT_MS = 20 * 60 * 1000;
 
+/** Extracts the sheet ID from a full Google Sheets URL or returns the raw string if it's already an ID */
+function parseSheetId(input: string): string {
+  const match = input.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : input.trim();
+}
+
 export default function DashboardPage() {
   const [keywords, setKeywords] = useState<KeywordEntry[]>([]);
   const [jobs, setJobs] = useState<JobRecord[]>([]);
@@ -27,6 +33,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('keywords');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [sheetInput, setSheetInput] = useState('');
+  const [activeSheetId, setActiveSheetId] = useState<string | undefined>(undefined);
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStartRef = useRef<number | null>(null);
@@ -44,12 +52,14 @@ export default function DashboardPage() {
 
   // ─── Load keywords ────────────────────────────────────────────────────────
 
-  async function loadKeywords(isRefresh = false) {
+  async function loadKeywords(isRefresh = false, sheetIdOverride?: string) {
     if (isRefresh) setIsRefreshing(true);
     else setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/keywords');
+      const id = sheetIdOverride ?? activeSheetId;
+      const url = id ? `/api/keywords?sheetId=${id}` : '/api/keywords';
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to load keywords');
       const data: KeywordEntry[] = await res.json();
       setKeywords(data);
@@ -63,7 +73,8 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    loadKeywords();
+    if (activeSheetId) loadKeywords();
+    else setLoading(false);
   }, []);
 
   // ─── Polling ──────────────────────────────────────────────────────────────
@@ -90,7 +101,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/video/status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uniqueKeys: activeJobs.map((j) => j.uniqueKey) }),
+        body: JSON.stringify({ uniqueKeys: activeJobs.map((j) => j.uniqueKey), sheetId: activeSheetId }),
       });
       const data = await res.json();
       if (data.jobs) {
@@ -161,7 +172,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/video/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ titles }),
+        body: JSON.stringify({ titles, sheetId: activeSheetId }),
       });
       const data = await res.json();
       if (data.jobs) {
@@ -289,6 +300,53 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* Sheet switcher */}
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <span className="text-sm text-slate-500 whitespace-nowrap">Sheet:</span>
+        <input
+          type="text"
+          value={sheetInput}
+          onChange={(e) => setSheetInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const id = parseSheetId(sheetInput) || undefined;
+              setActiveSheetId(id);
+              setJobs([]);
+              loadKeywords(false, id);
+            }
+          }}
+          placeholder="Paste Google Sheet URL or ID, then press Enter"
+          className="flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          onClick={() => {
+            const id = parseSheetId(sheetInput) || undefined;
+            setActiveSheetId(id);
+            setJobs([]);
+            loadKeywords(false, id);
+          }}
+          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Load
+        </button>
+        {activeSheetId && (
+          <button
+            onClick={() => {
+              setSheetInput('');
+              setActiveSheetId(undefined);
+              setJobs([]);
+              loadKeywords(false, undefined);
+            }}
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-50"
+          >
+            Reset
+          </button>
+        )}
+        {activeSheetId && (
+          <span className="text-xs text-emerald-600 font-medium whitespace-nowrap">✓ Custom sheet active</span>
+        )}
+      </div>
+
       {/* Tab navigation */}
       <div className="flex border-b border-slate-200">
         <button
@@ -332,7 +390,13 @@ export default function DashboardPage() {
       )}
 
       {/* Loading skeleton */}
-      {loading ? (
+      {!activeSheetId && !loading ? (
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-20 text-center">
+          <p className="text-2xl mb-2">📋</p>
+          <p className="text-sm font-medium text-slate-600">No sheet loaded</p>
+          <p className="text-xs text-slate-400 mt-1">Paste a Google Sheet URL or ID above and click Load</p>
+        </div>
+      ) : loading ? (
         <div className="flex flex-col gap-3">
           <div className="h-10 w-full max-w-md animate-pulse rounded-lg bg-slate-200" />
           <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">

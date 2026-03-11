@@ -8,12 +8,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const titles: string[] = body.titles ?? (body.title ? [body.title] : []);
+    const sheetId: string | undefined = body.sheetId ?? undefined;
 
     if (titles.length === 0) {
       return NextResponse.json({ error: 'No titles provided' }, { status: 400 });
     }
 
-    const keywords = await getFullKeywordData();
+    const keywords = await getFullKeywordData(sheetId);
     const results = [];
 
     for (const title of titles) {

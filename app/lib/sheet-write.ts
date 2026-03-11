@@ -4,8 +4,8 @@ import { getSheetData, writeSheetData } from './sheets';
  * Writes final video + audio URLs to Content Generator tab, cols F & G,
  * in the row matching the given keyword title (col A).
  */
-export async function writeFinalOutput(title: string, videoUrl: string, audioUrl: string): Promise<void> {
-  const rows = await getSheetData('Content Generator', 'A:A');
+export async function writeFinalOutput(title: string, videoUrl: string, audioUrl: string, spreadsheetId?: string): Promise<void> {
+  const rows = await getSheetData('Content Generator', 'A:A', spreadsheetId);
 
   // Find the row index (1-based, including header)
   let rowIndex = -1;
@@ -20,5 +20,5 @@ export async function writeFinalOutput(title: string, videoUrl: string, audioUrl
     throw new Error(`Title "${title}" not found in Content Generator tab`);
   }
 
-  await writeSheetData('Content Generator', `F${rowIndex}:G${rowIndex}`, [[videoUrl, audioUrl]]);
+  await writeSheetData('Content Generator', `F${rowIndex}:G${rowIndex}`, [[videoUrl, audioUrl]], spreadsheetId);
 }

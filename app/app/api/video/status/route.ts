@@ -9,6 +9,7 @@ export async function POST(req: Request) {
 
     // Determine which keys to poll
     let uniqueKeys: string[] = [];
+    const sheetId: string | undefined = body.sheetId ?? undefined;
     if (body.uniqueKey) {
       uniqueKeys = [body.uniqueKey];
     } else if (body.uniqueKeys?.length) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
 
         // Write back to sheet — Content Generator tab, cols F & G, matched by title
         try {
-          await writeFinalOutput(job.title, result.videoUrl, result.audioUrl);
+          await writeFinalOutput(job.title, result.videoUrl, result.audioUrl, sheetId);
         } catch (writeErr) {
           console.error('Failed to write output to sheet:', writeErr);
         }

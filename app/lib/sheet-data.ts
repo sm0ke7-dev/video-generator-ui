@@ -21,7 +21,7 @@ function buildSceneMap(rows: string[][]): Map<string, string[]> {
 
 /** Master keyword list from Content Generator tab.
  *  Columns: A=Keyword Variation | B=Core Keyword | C=Location | D=Background Audio | E=Make Video? | F=Final Video URL | G=Final Audio URL */
-export async function getAllKeywords(): Promise<{
+export async function getAllKeywords(spreadsheetId?: string): Promise<{
   title: string;
   coreKeyword: string;
   location: string;
@@ -30,7 +30,7 @@ export async function getAllKeywords(): Promise<{
   finalVideoUrl: string;
   finalAudioUrl: string;
 }[]> {
-  const rows = await getSheetData('Content Generator', 'A:G');
+  const rows = await getSheetData('Content Generator', 'A:G', spreadsheetId);
   const results = [];
   for (let i = 1; i < rows.length; i++) {
     const [title, coreKeyword, location, backgroundAudio, makeVideo, finalVideoUrl, finalAudioUrl] = rows[i];
@@ -49,27 +49,27 @@ export async function getAllKeywords(): Promise<{
 }
 
 /** Video clip URLs per keyword — from Video tab */
-export async function getVideoClips(): Promise<Map<string, string[]>> {
-  const rows = await getSheetData('Video', 'A:ZZ');
+export async function getVideoClips(spreadsheetId?: string): Promise<Map<string, string[]>> {
+  const rows = await getSheetData('Video', 'A:ZZ', spreadsheetId);
   return buildSceneMap(rows);
 }
 
 /** Caption text per scene per keyword — from Text tab */
-export async function getCaptions(): Promise<Map<string, string[]>> {
-  const rows = await getSheetData('Text', 'A:ZZ');
+export async function getCaptions(spreadsheetId?: string): Promise<Map<string, string[]>> {
+  const rows = await getSheetData('Text', 'A:ZZ', spreadsheetId);
   return buildSceneMap(rows);
 }
 
 /** Phonetic narration text per scene per keyword — from Phonetic Text tab */
-export async function getPhoneticText(): Promise<Map<string, string[]>> {
-  const rows = await getSheetData('Phonetic Text', 'A:ZZ');
+export async function getPhoneticText(spreadsheetId?: string): Promise<Map<string, string[]>> {
+  const rows = await getSheetData('Phonetic Text', 'A:ZZ', spreadsheetId);
   return buildSceneMap(rows);
 }
 
 /** Background music track URLs — from bgAudio tab.
  *  Column A = URL, header = "Tracks" */
-export async function getBackgroundMusic(): Promise<BackgroundTrack[]> {
-  const rows = await getSheetData('bgAudio', 'A:A');
+export async function getBackgroundMusic(spreadsheetId?: string): Promise<BackgroundTrack[]> {
+  const rows = await getSheetData('bgAudio', 'A:A', spreadsheetId);
   const tracks: BackgroundTrack[] = [];
   for (let i = 1; i < rows.length; i++) {
     const url = rows[i]?.[0]?.trim();
@@ -114,13 +114,13 @@ export async function getFinalOutputRaw(): Promise<{ videoUrl: string; audioUrl:
 
 /** Merges all tabs into a unified KeywordEntry[] array.
  *  Join key is the keyword title (col A of each tab). */
-export async function getFullKeywordData(): Promise<KeywordEntry[]> {
+export async function getFullKeywordData(spreadsheetId?: string): Promise<KeywordEntry[]> {
   const [keywords, videoClips, captions, phoneticTexts, bgTracks] = await Promise.all([
-    getAllKeywords(),
-    getVideoClips(),
-    getCaptions(),
-    getPhoneticText(),
-    getBackgroundMusic(),
+    getAllKeywords(spreadsheetId),
+    getVideoClips(spreadsheetId),
+    getCaptions(spreadsheetId),
+    getPhoneticText(spreadsheetId),
+    getBackgroundMusic(spreadsheetId),
   ]);
 
   const defaultBgMusic = bgTracks[0]?.url ?? 'default';
