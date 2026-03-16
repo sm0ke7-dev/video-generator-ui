@@ -36,6 +36,9 @@ yarn-error.log*
 # service account keys
 ../*.json
 
+# local job data
+/data/
+
 # vercel
 .vercel
 
