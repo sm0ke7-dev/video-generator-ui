@@ -198,41 +198,70 @@ Key state slices:
 
 ---
 
-## 9. Deploying to Cloudflare — read this before you start
+## 9. Cloudflare Deployment
 
-**The app currently assumes a Node.js runtime with a writable filesystem.** Cloudflare Pages/Workers do not provide that. Two things will break on day one:
+**Status: LIVE**
 
-### Blocker 1: `lib/sheets.ts` reads the service account key from disk
+**Live URL:** https://aaac-video-generator.aaac-video-generator.workers.dev
 
-```ts
-const keyFile = JSON.parse(fs.readFileSync(absolutePath, 'utf-8'));
+### Redeploy command
+
+```bash
+cd app && npm run deploy
 ```
 
-There is no `fs` on Workers. **Fix:** store the service-account JSON as a Cloudflare secret (e.g. `GOOGLE_SERVICE_ACCOUNT_JSON`) and parse it from `process.env` / `env.GOOGLE_SERVICE_ACCOUNT_JSON` directly:
+### Key architectural changes
 
-```ts
-const keyFile = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON!);
+The app has been fully migrated to Cloudflare Workers + KV. The following changes were made to bridge the gap from Node.js:
+
+1. **`googleapis` → raw `fetch` + Web Crypto JWT** (`lib/sheets.ts`)
+   - Removed the `googleapis` dependency (Node-only, large footprint)
+   - Implemented JWT authentication using Web Crypto API (Worker-compatible)
+   - All Google Sheets calls now use raw `fetch` to `https://sheets.googleapis.com/v4/spreadsheets/...`
+   - Service account key parsed directly from env secret, not from disk
+
+2. **File-based job store → Cloudflare KV** (`lib/job-store.ts`)
+   - Replaced `data/jobs.json` filesystem persistence with Cloudflare KV
+   - Each job stored as a KV entry: key = `uniqueKey`, value = `JobRecord` JSON
+   - Index key `JOBS_INDEX` maintains active job list for polling
+   - No disk I/O, fully distributed and durable
+
+3. **Build adapter: `@opennextjs/cloudflare`**
+   - Configured in `open-next.config.ts`
+   - Must use webpack build (not Turbopack) — see `next build --webpack` in package.json scripts
+   - Turbopack's dynamic chunk loading silently fails on Windows with this adapter; webpack is the required fallback
+
+### Secrets (stored in Cloudflare dashboard, not in code)
+
+- `GOOGLE_SERVICE_ACCOUNT_KEY_JSON` — Full JSON service account key (from `cloud-storage-340122-*.json`)
+- `VIDEO_API_USER_ID` — Video API user ID
+- `VIDEO_API_PASSWORD` — Video API password
+
+Retrieve/update secrets via:
+```bash
+wrangler secret put GOOGLE_SERVICE_ACCOUNT_KEY_JSON
+wrangler secret put VIDEO_API_USER_ID
+wrangler secret put VIDEO_API_PASSWORD
 ```
 
-Also verify `googleapis` itself works on Workers. It historically has not because it depends on Node core modules. You may need to switch to `google-auth-library`'s JWT flow + plain `fetch` calls to `https://sheets.googleapis.com/v4/spreadsheets/...`, which is maybe ~50 lines and removes the `googleapis` dep entirely.
+### KV namespace
 
-### Blocker 2: `lib/job-store.ts` writes to `data/jobs.json`
+- **`JOBS_KV`** — Holds all `JobRecord` entries. Namespace ID in `wrangler.toml` points to the production binding.
 
-Worker filesystems are read-only. **Fix options, easiest first:**
+### Local development
 
-1. **Cloudflare KV** — `env.JOBS_KV.put(uniqueKey, JSON.stringify(record))`. Per-job key, plus one index key for "all active". Good enough for <100s of jobs.
-2. **Cloudflare D1** (SQLite) — more structured, lets you query by status. Overkill for current volume.
-3. **Durable Objects** — if you ever need coordination between multiple polling clients for the same job (you don't today).
+Create `app/.dev.vars` (gitignored) with all three secrets as plaintext for local testing:
+```
+GOOGLE_SERVICE_ACCOUNT_KEY_JSON={"type":"service_account",...}
+VIDEO_API_USER_ID=daniel
+VIDEO_API_PASSWORD=daniel1234
+```
 
-Abstract the store behind its existing interface (`addJob`, `getJob`, …) and swap the implementation. Every caller already goes through that module.
-
-### Other things to check
-
-- **Next.js on Cloudflare.** Use `@cloudflare/next-on-pages` or the newer OpenNext adapter. Mark all route handlers that touch Google Sheets or the job store with `export const runtime = 'edge'` once the blockers above are fixed, or explicitly opt them into Node compat.
-- **CPU time limits.** Workers have a per-request CPU budget. `POST /api/video/submit` submits N jobs *sequentially* inside one request. For large batches this might exceed limits — consider fan-out via `waitUntil` or a queue.
-- **The 10-second client poll calls `/api/video/status` which then calls the external API once per active job sequentially.** Same concern as above for large active sets.
-- **Secrets migration.** Everything in `.env.local` must become `wrangler secret put ...` (or Pages project env vars). `GOOGLE_SHEET_ID` can stay a plaintext var; the others should be secrets.
-- **Service account JSON file in repo.** `cloud-storage-340122-*.json` is currently checked into the repo root. After migrating to an env secret, remove it from the repo and rotate the key.
+Then run:
+```bash
+cd app
+npm run dev:wrangler   # Local Workers emulation with KV
+```
 
 ---
 
