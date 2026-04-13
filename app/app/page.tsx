@@ -103,11 +103,12 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uniqueKeys: activeJobs.map((j) => j.uniqueKey), sheetId: activeSheetId }),
       });
-      const data = await res.json();
-      if (data.jobs) {
+      const data = await res.json() as Record<string, unknown>;
+      const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+      if (jobs.length > 0) {
         setJobs((prev) => {
           const updated = new Map(prev.map((j) => [j.uniqueKey, j]));
-          for (const j of data.jobs) {
+          for (const j of jobs) {
             updated.set(j.uniqueKey, j);
             // Toast on completion
             if (j.status === 'complete') {
@@ -174,10 +175,11 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ titles, sheetId: activeSheetId }),
       });
-      const data = await res.json();
-      if (data.jobs) {
-        const submitted = data.jobs.filter((j: { uniqueKey?: string }) => j.uniqueKey);
-        const failed = data.jobs.filter((j: { error?: string }) => j.error);
+      const data = await res.json() as Record<string, unknown>;
+      const resultJobs = Array.isArray(data.jobs) ? data.jobs : [];
+      if (resultJobs.length > 0) {
+        const submitted = resultJobs.filter((j: any) => j.uniqueKey);
+        const failed = resultJobs.filter((j: any) => j.error);
 
         const newJobs: JobRecord[] = submitted.map((j: JobRecord) => j);
         setJobs((prev) => {

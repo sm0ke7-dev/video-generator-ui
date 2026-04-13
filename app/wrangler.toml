@@ -1,0 +1,17 @@
+name = "aaac-video-generator"
+main = ".open-next/worker.js"
+compatibility_date = "2026-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[[kv_namespaces]]
+binding = "JOBS_KV"
+id = "REPLACE_WITH_PROD_KV_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+[vars]
+GOOGLE_SHEET_ID = "1hijw2clTvmZV2qxu6u0GnwR8fd1HbbcfbjJRzuvn0Rk"
+VIDEO_API_BASE_URL = "https://mediagenerationapi-production.up.railway.app"

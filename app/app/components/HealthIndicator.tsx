@@ -8,7 +8,7 @@ export default function HealthIndicator() {
   async function check() {
     try {
       const res = await fetch('/api/health');
-      const data = await res.json();
+      const data = await res.json() as Record<string, unknown>;
       setHealthy(data.healthy === true);
     } catch {
       setHealthy(false);

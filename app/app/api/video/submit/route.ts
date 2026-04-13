@@ -4,11 +4,15 @@ import { assembleJobPayload } from '@/lib/job-assembler';
 import { submitJob } from '@/lib/video-api';
 import { addJob } from '@/lib/job-store';
 
+export const runtime = 'nodejs';
+
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const titles: string[] = body.titles ?? (body.title ? [body.title] : []);
-    const sheetId: string | undefined = body.sheetId ?? undefined;
+    const body = await req.json() as Record<string, unknown>;
+    const titles: string[] = Array.isArray(body.titles) && body.titles.every((t): t is string => typeof t === 'string')
+      ? body.titles
+      : typeof body.title === 'string' ? [body.title] : [];
+    const sheetId: string | undefined = typeof body.sheetId === 'string' ? body.sheetId : undefined;
 
     if (titles.length === 0) {
       return NextResponse.json({ error: 'No titles provided' }, { status: 400 });
@@ -23,7 +27,6 @@ export async function POST(req: Request) {
         results.push({ title, error: 'Keyword not found in sheet' });
         continue;
       }
-
       if (entry.scenes.length === 0) {
         results.push({ title, error: 'No scenes found for this keyword' });
         continue;
@@ -36,13 +39,12 @@ export async function POST(req: Request) {
         results.push({ title, error: 'Authentication failed' });
         continue;
       }
-
       if (result.status === 401 || !result.uniqueRequestKey) {
         results.push({ title, error: result.description ?? 'Error submitting job' });
         continue;
       }
 
-      const job = addJob(title, result.uniqueRequestKey);
+      const job = await addJob(title, result.uniqueRequestKey);
       results.push({ title, uniqueKey: job.uniqueKey, status: job.status });
     }
 
