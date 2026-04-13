@@ -2,6 +2,8 @@ name = "aaac-video-generator"
 main = ".open-next/worker.js"
 compatibility_date = "2026-03-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+account_id = "d1d6a9d309a1e28b2abf202482b2b7b8"
 
 [assets]
 directory = ".open-next/assets"
@@ -9,8 +11,8 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "JOBS_KV"
-id = "REPLACE_WITH_PROD_KV_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+id = "c04eac495c794f92a377a3f3cd7b3072"
+preview_id = "76e79c4e7dcf49e98aa882b92129dd2e"
 
 [vars]
 GOOGLE_SHEET_ID = "1hijw2clTvmZV2qxu6u0GnwR8fd1HbbcfbjJRzuvn0Rk"
