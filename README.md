@@ -202,7 +202,7 @@ Key state slices:
 
 **Status: LIVE**
 
-**Live URL:** https://aaac-video-generator.aaac-video-generator.workers.dev
+**Live URL:** https://aaac-video-generator.brightfox-digital.workers.dev
 
 ### Redeploy command
 
