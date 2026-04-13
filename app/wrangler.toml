@@ -11,8 +11,8 @@ binding = "ASSETS"
 
 [[kv_namespaces]]
 binding = "JOBS_KV"
-id = "080d843cb45a415a8a43b37e6d840660"
-preview_id = "efabd1e4c0af4064b0c5477666944e47"
+id = "730404cf0f3a4c9f8137839713b4059a"
+preview_id = "9d82f819c96d44fa8e310d3485a32916"
 
 [vars]
 GOOGLE_SHEET_ID = "1hijw2clTvmZV2qxu6u0GnwR8fd1HbbcfbjJRzuvn0Rk"
