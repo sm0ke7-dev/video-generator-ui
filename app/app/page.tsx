@@ -13,6 +13,7 @@ type Tab = 'keywords' | 'results';
 
 const POLL_INTERVAL_MS = 10_000;
 const TIMEOUT_MS = 20 * 60 * 1000;
+const DEFAULT_SHEET_ID = '1hijw2clTvmZV2qxu6u0GnwR8fd1HbbcfbjJRzuvn0Rk';
 
 /** Extracts the sheet ID from a full Google Sheets URL or returns the raw string if it's already an ID */
 function parseSheetId(input: string): string {
@@ -33,8 +34,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<Tab>('keywords');
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-  const [sheetInput, setSheetInput] = useState('');
-  const [activeSheetId, setActiveSheetId] = useState<string | undefined>(undefined);
+  const [sheetInput, setSheetInput] = useState(DEFAULT_SHEET_ID);
+  const [activeSheetId, setActiveSheetId] = useState<string | undefined>(DEFAULT_SHEET_ID);
 
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollStartRef = useRef<number | null>(null);
@@ -73,8 +74,7 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    if (activeSheetId) loadKeywords();
-    else setLoading(false);
+    loadKeywords();
   }, []);
 
   // ─── Polling ──────────────────────────────────────────────────────────────
