@@ -101,3 +101,14 @@ Nothing was explicitly planned next — the user will direct. Potential areas:
 - UI improvements
 - Monitoring / error alerting
 - Custom domain setup on Cloudflare
+
+---
+
+## Cloudflare Account Migration Note (2026-04-14)
+
+- Received KV free tier limit email (>1000 writes/day) from Cloudflare after the migration to the agency paid account
+- Personal (free) account: `Daniel@brightfoxdigital.agency's Account` — old worker + KV namespaces deleted 2026-04-14
+- Agency (paid) account: `Marketing@brightfoxdigital.agency's Account` ($5/mo — 1M writes/day) — current active account
+- Both accounts are accessible under the `daniel@brightfoxdigital.agency` Cloudflare login
+- RESOLVED: old worker and 3 KV namespaces deleted from personal account via wrangler on 2026-04-14
+- wrangler.toml correctly points to agency account (`bb44c9b37ef496cf4101616fc6c49fd8`)
